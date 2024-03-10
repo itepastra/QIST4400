@@ -29,6 +29,8 @@ def single_spin_hamiltonian(fR, f0, mw_signal, rotating_frame=None ):
     H = [H0, [H1, mw_signal]]
 
     return H
+
+
 def rwa_hamiltonian( f0 ):
   """
   Arguments:
@@ -48,7 +50,51 @@ def rwa_hamiltonian( f0 ):
   H = H0
 
   return H
-    
+
+def double_spin_hamiltonian( f0, J_signal, rotating_frame=None ):
+    """
+    Arguments:
+    f0 --> Larmor frequency list (Hz)
+    J_signal --> a function representing the external signal
+    Returns:
+    A time-dependent Hamiltonian compatible with QuTiP's time evolution simulators.
+    """
+
+    # Static part of the Hamiltonian based on the Larmor frequency
+    Ez = 2*np.pi*(f0[0]+f0[1])/2;
+    dEz = 2*np.pi*(f0[0]-f0[1]);
+
+    H0 = qt.Qobj([[Ez,0,0,0],[0,dEz/2,0,0],[0,0,-dEz/2,0],[0,0,0,-Ez]]);
+
+    # Time-dependent part of the Hamiltonian based on the Rabi frequency
+    H1 = 2*np.pi*qt.Qobj([[0,0,0,0],[0,-1,1,0],[0,1,-1,0],[0,0,0,0]])/2;
+
+    # The total Hamiltonian
+    H = [H0, [H1, J_signal]]
+
+    return H
+
+
+def rwa_hamiltonian_2qubit( f0 ):
+    """
+    Arguments:
+    fR --> Rabi frequency (Hz)
+    f0 --> Larmor frequency (Hz)
+    mw_signal --> a function representing the external signal
+
+    Returns:
+    A time-dependent Hamiltonian compatible with QuTiP's time evolution simulators.
+    """
+
+    # Static part of the Hamiltonian based on the Larmor frequency
+    H0 =  -np.pi* f0[0] * qt.sigmaz()
+    H1 =  -np.pi* f0[1] * qt.sigmaz()
+
+    #H = qt.tensor(H0, qt.identity(2)) + qt.tensor(qt.identity(2), H1)
+    H = qt.Qobj( np.kron(H0, qt.identity(2)) + np.kron(qt.identity(2), H1) )
+
+    return H
+
 def plot_signal(signal, sampling_rate=None, xlim = None):
 
     trange = np.arange(0, signal.size , 1)*sampling_rate
