@@ -87,8 +87,8 @@ def rwa_hamiltonian_2qubit( f0 ):
     """
 
     # Static part of the Hamiltonian based on the Larmor frequency
-    H0 =  -np.pi* f0[0] * qt.sigmaz()
-    H1 =  -np.pi* f0[1] * qt.sigmaz()
+    H0 =  np.pi* f0[0] * qt.sigmaz()
+    H1 =  np.pi* f0[1] * qt.sigmaz()
 
     #H = qt.tensor(H0, qt.identity(2)) + qt.tensor(qt.identity(2), H1)
     H = qt.Qobj( np.kron(H0, qt.identity(2)) + np.kron(qt.identity(2), H1) )
