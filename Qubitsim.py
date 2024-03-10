@@ -195,3 +195,90 @@ def single_qubit_evolution(larmor_frequency, rabi_frequency, signal_array, trang
       b.show()
 
   return (fidelity)
+
+def double_qubit_evolution(larmor_frequencies, signal_array, trange, initial_state, target_operator, plot2D=False, plot3D=False, RWA=True):
+
+  # Create the time-dependent Hamiltonian
+  Hamiltonian = double_spin_hamiltonian( f0=larmor_frequencies, J_signal=signal_array)
+  H_rwa = rwa_hamiltonian_2qubit(larmor_frequencies);
+
+  # Calculate the operator with and w/o rotating frame approx.
+  # qt.propagator returns list of U for each time step
+  U = qt.propagator(Hamiltonian,trange);
+  U_rwa = qt.propagator(H_rwa,trange);
+
+  # For CPHASE gate some calibration is needed
+  # This can be done by applying two Z gates on the qubits
+  # Z gate can be achieved by changing the rotating frame reference therefore no signal needs to be sent
+  dEz = np.abs(larmor_frequencies[1] - larmor_frequencies[0])
+  theha_cali = np.sum( dEz - np.sqrt(signal_array**2 + dEz**2)*dt/0.5/2 )
+  U_calibration = qt.Qobj(np.array([[1, 0, 0, 0],[0, np.exp(-1j*np.pi*theha_cali), 0, 0],[0, 0, np.exp(1j*np.pi*theha_cali), 0],[0, 0, 0, 1]]))
+
+  # Fidelity calculation
+  fidelity = calculate_fidelity( U_calibration*U_rwa[-1]*U[-1], target_operator );
+
+  print(U_calibration*U_rwa[-1]*U[-1])
+
+  if ( plot2D | plot3D == True ):
+
+    if (RWA):
+      states = U_rwa*U*initial_state;
+    else:
+      states = U*initial_state;
+
+    if( plot2D == True):
+      # Create Measurement basis
+      # |1+>
+      meas_basis1 = qt.Qobj(np.array([0,0,1,1]/np.sqrt(2)))*qt.Qobj(np.array([0,0,1,1]/np.sqrt(2))).dag()
+      # |1->
+      meas_basis2 = qt.Qobj(np.array([0,0,1,-1]/np.sqrt(2)))*qt.Qobj(np.array([0,0,1,-1]/np.sqrt(2))).dag()
+      # 1-|1->-|1+>
+      meas_basis3 = qt.Qobj(np.array([0,1,0,0]))*qt.Qobj(np.array([0,1,0,0])).dag()
+
+      
+      # Plot the measurement basis results
+      fig, ax = plt.subplots(figsize=(8,3))
+      ax.plot(trange/1e-9, qt.expect(meas_basis1,states))
+      ax.set_xlabel('Time (ns)')
+      ax.set_ylabel(r'$P _{|1+\rangle}$')
+
+      fig, ax = plt.subplots(figsize=(8,3))
+      ax.plot(trange/1e-9, qt.expect(meas_basis2,states))
+      ax.set_xlabel('Time (ns)')
+      ax.set_ylabel(r'$P _{|1-\rangle}$')
+
+      fig, ax = plt.subplots(figsize=(8,3))
+      ax.plot(trange/1e-9, qt.expect(meas_basis3,states))
+      ax.set_xlabel('Time (ns)')
+      ax.set_ylabel(r'$1-(P _{|1+\rangle}+P _{|1-\rangle})$')
+
+    if( plot3D == True):
+
+      # Create Measurement basis
+      meas_basis1 = qt.Qobj(np.kron(qt.sigmax(),qt.identity(2)))
+      meas_basis2 = qt.Qobj(np.kron(qt.sigmay(),qt.identity(2)))
+      meas_basis3 = qt.Qobj(np.kron(qt.sigmaz(),qt.identity(2)))
+
+      nrm = mpl.colors.Normalize(min(trange), max(trange))
+      colors = cm.cool(nrm(trange))
+      
+      # Plot the measurement basis results
+      b = qt.Bloch()
+      b.add_points([qt.expect(meas_basis1,states), qt.expect(meas_basis2,states), qt.expect(meas_basis3,states)], "m")
+      b.point_color = list(colors)
+      b.size=[3,3]
+      b.show()
+
+      # Create Measurement basis
+      meas_basis1 = qt.Qobj(np.kron(qt.identity(2),qt.sigmax()))
+      meas_basis2 = qt.Qobj(np.kron(qt.identity(2),qt.sigmay()))
+      meas_basis3 = qt.Qobj(np.kron(qt.identity(2),qt.sigmaz()))
+
+      # Plot the measurement basis results
+      b = qt.Bloch()
+      b.add_points([qt.expect(meas_basis1,states), qt.expect(meas_basis2,states), qt.expect(meas_basis3,states)], "m")
+      b.point_color = list(colors)
+      b.size=[3,3]
+      b.show()
+
+  return (fidelity)
