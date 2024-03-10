@@ -7,13 +7,13 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
-def time_dependent_hamiltonian(fR, f0, signal_function):
-    """
 
+def single_spin_hamiltonian(fR, f0, mw_signal, rotating_frame=None ):
+    """
     Arguments:
     fR --> Rabi frequency (Hz)
     f0 --> Larmor frequency (Hz)
-    signal_function --> a function representing the external signal
+    mw_signal --> a function representing the external signal
 
     Returns:
     A time-dependent Hamiltonian compatible with QuTiP's time evolution simulators.
@@ -26,58 +26,125 @@ def time_dependent_hamiltonian(fR, f0, signal_function):
     H1 = 2*np.pi*fR *qt.sigmax()
 
     # The total Hamiltonian
-    H = [H0, [H1, signal_function]]
+    H = [H0, [H1, mw_signal]]
 
     return H
-def apply_rotating_frame_on_z(result, rotation_frequency, trange):
-    """
-    Apply the rotating frame transformation specifically to the z-axis measurement results stored in a QuTiP Result object.
 
-    Arguments:
-    result -- QuTiP Result object containing the simulation outcomes
-    rotation_frequency -- frequency of the rotating frame
-    trange -- array of time points for the simulation
+def plot_signal(signal, sampling_rate=None, xlim = None):
 
-    Returns:
-    transformed_results -- list of arrays with results transformed into the rotating frame
-    """
-    omega = -2 * np.pi * rotation_frequency
-    sigma_x_prime = []
-    sigma_y_prime = []
+    trange = np.arange(0, signal.size , 1)*sampling_rate
 
-    for (pos,t) in enumerate(trange):
-        cos_factor = np.cos(omega * t)
-        sin_factor = np.sin(omega * t)
-        # Assuming result.expect[0] is sigma_x and result.expect[1] is sigma_y
-        sigma_x_prime.append(result.expect[0][pos] * cos_factor - result.expect[1][pos] * sin_factor)
-        sigma_y_prime.append(result.expect[0][pos] * sin_factor + result.expect[1][pos] * cos_factor)
-    sigma_x_prime_array = np.array(sigma_x_prime)
-    sigma_y_prime_array = np.array(sigma_y_prime)    
-    #print(len(sigma_x_prime_array), len(result.expect[2]), len(sigma_y_prime_array))
-    return [sigma_x_prime_array, sigma_y_prime_array, result.expect[2]]
+    fig, ax = plt.subplots(figsize=(8,3))
+    ax.plot(trange/1e-9, signal_array, label="MW signal")
+    ax.legend()
+    ax.set_xlabel('Time (ns)')
+    ax.set_ylabel('Amplitude')
+    if xlim is not None:
+      plt.xlim(xlim)
 
-def signal_generator(signal_type="cos", frequency=1e9, amplitude=1, time_array=None):
-    "Creates a signal as an array ov values, for a given frequency and signal type"
-    if time_array is None:
-        raise ValueError("time_array must be provided")
-    
-    if signal_type == "sin":
-        return amplitude * np.sin(2 * np.pi * frequency * time_array)
-    elif signal_type == "cos":
-        return amplitude * np.cos(2 * np.pi * frequency * time_array)
-    elif signal_type == "id":
-        return amplitude*time_array
-    else:
-        raise ValueError("Unsupported signal type. Supported types are 'sin' and 'cos'")
-        
-def calculate_fidelity(operation, ideal):
+
+def rwa_hamiltonian( f0 ):
+  """
+  Arguments:
+  fR --> Rabi frequency (Hz)
+  f0 --> Larmor frequency (Hz)
+  mw_signal --> a function representing the external signal
+
+  Returns:
+  A time-dependent Hamiltonian compatible with QuTiP's time evolution simulators.
+  """
+
+  # Static part of the Hamiltonian based on the Larmor frequency
+  H0 =  -np.pi* f0 * qt.sigmaz()
+
+
+  # The total Hamiltonian
+  H = H0
+
+  return H
+
+def plot_fft(signal, sampling_rate=None, xlim = None):
+  """
+  Calculates and plots the FFT of a signal.
+
+  Args:
+    signal: A list or NumPy array containing the signal data.
+    sampling_rate: The sampling rate of the signal (optional).
+    title: The title for the plot (optional).
+  """
+
+  # Zero padding
+  padded_signal = np.pad(signal, (0, 10*len(signal)), mode='constant')
+
+  # Compute FFT
+  fft = np.fft.fft(signal)
+
+  # Absolute values for magnitude
+  mag = 20*np.log10(np.abs(fft))
+
+  # Frequencies
+  if sampling_rate is not None:
+    freqs = np.fft.fftfreq(len(signal), sampling_rate)
+  else:
+    freqs = np.fft.fftfreq(len(signal))
+
+  # Half the spectrum for real signals
+  if np.isrealobj(signal):
+    mag = mag[:len(mag)//2]
+    freqs = freqs[:len(freqs)//2]
+
+  # Plot
+  plt.figure()
+  plt.plot(freqs, mag)
+  if xlim is not None:
+    plt.xlim(xlim)
+  plt.xlabel("Frequency" if sampling_rate is not None else "Normalized Frequency")
+  plt.ylabel("Signal Power (dB)")
+  plt.title("Singal FFT")
+  plt.show()
+
+def calculate_fidelity(U, U_ideal):
     """
     Calculate the process fidelity between the operation and the ideal transformation.
     """
-    return np.abs(np.trace((ideal.dag() * operation).full()))**2 / (operation.dim[0][0] * ideal.dim[0][0])
-def process_fidelity():
-    
-    return 
-def time_evolution(Hamiltonian, state, time, operators):
-    full_evolution= qt.sesolve(Hamiltonian, state, time, operators, progress_bar =None )
-    return full_evolution
+    dim = U.shape[0]*U.shape[1]
+    return np.abs(np.trace((U.dag() * U_ideal).full()))**2/(dim)
+
+def single_qubit_evolution(larmor_frequency, rabi_frequency, signal_array, trange, initial_state, target_operator, plot2D=False, plot3D=False, index=1, RWA = False):
+
+  # Create the time-dependent Hamiltonian
+  Hamiltonian = single_spin_hamiltonian(fR=rabi_frequency, f0=larmor_frequency, mw_signal=signal_array)
+  Hamoltonian_rwa = rwa_hamiltonian(larmor_frequency);
+
+  # Calculate the operator with and w/o rotating frame approx.
+  # qt.propagator returns list of U for each time step
+  U = qt.propagator(Hamiltonian,trange);
+  U_w_rwa = qt.propagator(Hamoltonian_rwa,trange)*U;
+
+  # Fidelity can be calculated with
+  fidelity = calculate_fidelity( U_w_rwa[-1], target_operator );
+
+  if ( plot2D | plot3D == True ):
+
+    if (RWA):
+      states = U_w_rwa*initial_state;
+    else:
+      states = U*initial_state;
+
+    meas_basis = [qt.sigmax(),qt.sigmay(),qt.sigmaz()]
+
+    if( plot2D == True):
+      fig, ax = plt.subplots(figsize=(8,3))
+      ax.plot(trange/1e-9, qt.expect(meas_basis[2],states), label="Sigma z measurement")
+      ax.plot(trange/1e-9, qt.expect(meas_basis[0],states), label="Sigma x measurement")
+      #ax.plot(trange/1e-9, qt.expect(meas_basis[1],states), label="Sigma y measurement")
+      ax.legend()
+      ax.set_xlabel('Time')
+      ax.set_ylabel("Qubit " +str(index+1))
+    if( plot3D == True):
+      b = qt.Bloch()
+      b.add_points([qt.expect(meas_basis[0],states), qt.expect(meas_basis[1],states), qt.expect(meas_basis[2],states)])
+      b.size=[2,2]
+      b.show()
+
+  return (fidelity)
