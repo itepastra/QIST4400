@@ -64,7 +64,7 @@ def double_spin_hamiltonian( f0, J_signal, rotating_frame=None ):
     Ez = 2*np.pi*(f0[0]+f0[1])/2;
     dEz = 2*np.pi*(f0[0]-f0[1]);
 
-    H0 = qt.Qobj([[Ez,0,0,0],[0,dEz/2,0,0],[0,0,-dEz/2,0],[0,0,0,-Ez]]);
+    H0 = qt.Qobj([[-Ez,0,0,0],[0,-dEz/2,0,0],[0,0,dEz/2,0],[0,0,0,Ez]]);
 
     # Time-dependent part of the Hamiltonian based on the Rabi frequency
     H1 = 2*np.pi*qt.Qobj([[0,0,0,0],[0,-1,1,0],[0,1,-1,0],[0,0,0,0]])/2;
@@ -102,7 +102,6 @@ def plot_signal(signal, sampling_rate=None, xlim = None):
 
     fig, ax = plt.subplots(figsize=(8,3))
     ax.plot(trange/1e-9, signal)
-    ax.legend()
     ax.set_xlabel('Time (ns)')
     ax.set_ylabel('Amplitude')
     if xlim is not None:
