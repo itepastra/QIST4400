@@ -29,20 +29,6 @@ def single_spin_hamiltonian(fR, f0, mw_signal, rotating_frame=None ):
     H = [H0, [H1, mw_signal]]
 
     return H
-
-def plot_signal(signal, sampling_rate=None, xlim = None):
-
-    trange = np.arange(0, signal.size , 1)*sampling_rate
-
-    fig, ax = plt.subplots(figsize=(8,3))
-    ax.plot(trange/1e-9, signal, label="MW signal")
-    ax.legend()
-    ax.set_xlabel('Time (ns)')
-    ax.set_ylabel('Amplitude')
-    if xlim is not None:
-      plt.xlim(xlim)
-
-
 def rwa_hamiltonian( f0 ):
   """
   Arguments:
@@ -62,6 +48,21 @@ def rwa_hamiltonian( f0 ):
   H = H0
 
   return H
+    
+def plot_signal(signal, sampling_rate=None, xlim = None):
+
+    trange = np.arange(0, signal.size , 1)*sampling_rate
+
+    fig, ax = plt.subplots(figsize=(8,3))
+    ax.plot(trange/1e-9, signal, label="MW signal")
+    ax.legend()
+    ax.set_xlabel('Time (ns)')
+    ax.set_ylabel('Amplitude')
+    if xlim is not None:
+      plt.xlim(xlim)
+
+
+
 
 def plot_fft(signal, sampling_rate=None, xlim = None):
   """
@@ -100,7 +101,7 @@ def plot_fft(signal, sampling_rate=None, xlim = None):
     plt.xlim(xlim)
   plt.xlabel("Frequency" if sampling_rate is not None else "Normalized Frequency")
   plt.ylabel("Signal Power (dB)")
-  plt.title("Singal FFT")
+  plt.title("Signal FFT")
   plt.show()
 
 def calculate_fidelity(U, U_ideal):
