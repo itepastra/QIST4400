@@ -35,7 +35,7 @@ def plot_signal(signal, sampling_rate=None, xlim = None):
     trange = np.arange(0, signal.size , 1)*sampling_rate
 
     fig, ax = plt.subplots(figsize=(8,3))
-    ax.plot(trange/1e-9, signal_array, label="MW signal")
+    ax.plot(trange/1e-9, signal, label="MW signal")
     ax.legend()
     ax.set_xlabel('Time (ns)')
     ax.set_ylabel('Amplitude')
