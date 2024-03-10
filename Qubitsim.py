@@ -218,8 +218,6 @@ def double_qubit_evolution(larmor_frequencies, signal_array, trange, initial_sta
   # Fidelity calculation
   fidelity = calculate_fidelity( U_calibration*U_rwa[-1]*U[-1], target_operator );
 
-  print(U_calibration*U_rwa[-1]*U[-1])
-
   if ( plot2D | plot3D == True ):
 
     if (RWA):
