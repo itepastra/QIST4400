@@ -210,12 +210,12 @@ def double_qubit_evolution(larmor_frequencies, signal_array, trange, initial_sta
   # Z gate can be achieved by changing the rotating frame reference therefore no signal needs to be sent
   dEz = np.abs(larmor_frequencies[1] - larmor_frequencies[0])
   dt = trange[1]-trange[0]
-  theha_cali = np.sum( dEz - np.sqrt(signal_array**2 + dEz**2)*dt/0.5/2 )
+  theha_cali = np.sum( dEz - np.sqrt(signal_array**2 + dEz**2) )*dt/0.5/2
   U_calibration = qt.Qobj(np.array([[1, 0, 0, 0],[0, np.exp(1j*np.pi*theha_cali), 0, 0],[0, 0, np.exp(-1j*np.pi*theha_cali), 0],[0, 0, 0, 1]]))
 
   # Fidelity calculation
   fidelity = calculate_fidelity( U_calibration*U_rwa[-1]*U[-1], target_operator );
-
+  
   if ( plot2D | plot3D == True ):
 
     if (RWA):
@@ -263,7 +263,7 @@ def double_qubit_evolution(larmor_frequencies, signal_array, trange, initial_sta
       b = qt.Bloch()
       b.add_points([qt.expect(meas_basis1,states), qt.expect(meas_basis2,states), qt.expect(meas_basis3,states)], "m")
       b.point_color = list(colors)
-      b.size=[3,3]
+      b.size=[2,2]
       b.show()
 
       # Create Measurement basis
@@ -275,7 +275,7 @@ def double_qubit_evolution(larmor_frequencies, signal_array, trange, initial_sta
       b = qt.Bloch()
       b.add_points([qt.expect(meas_basis1,states), qt.expect(meas_basis2,states), qt.expect(meas_basis3,states)], "m")
       b.point_color = list(colors)
-      b.size=[3,3]
+      b.size=[2,2]
       b.show()
 
   return (fidelity)
