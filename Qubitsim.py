@@ -100,7 +100,7 @@ def plot_signal(signal, sampling_rate=None, xlim = None):
 
     trange = np.arange(0, signal.size , 1)*sampling_rate
 
-    fig, ax = plt.subplots(figsize=(8,3))
+    fig, ax = plt.subplots(figsize=(7,3))
     ax.plot(trange/1e-9, signal)
     ax.set_xlabel('Time (ns)')
     ax.set_ylabel('Amplitude')
@@ -232,22 +232,21 @@ def double_qubit_evolution(larmor_frequencies, signal_array, trange, initial_sta
       # 1-|1->-|1+>
       meas_basis3 = qt.Qobj(np.array([0,1,0,0]))*qt.Qobj(np.array([0,1,0,0])).dag()
 
-      
       # Plot the measurement basis results
-      fig, ax = plt.subplots(figsize=(8,3))
-      ax.plot(trange/1e-9, qt.expect(meas_basis1,states))
-      ax.set_xlabel('Time (ns)')
-      ax.set_ylabel(r'$P _{|1+\rangle}$')
+      fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
+      ax1.plot(trange/1e-9, qt.expect(meas_basis1,states))
+      ax1.set_ylabel(r'$P _{|1+\rangle}$')
 
-      fig, ax = plt.subplots(figsize=(8,3))
-      ax.plot(trange/1e-9, qt.expect(meas_basis2,states))
-      ax.set_xlabel('Time (ns)')
-      ax.set_ylabel(r'$P _{|1-\rangle}$')
+      ax2.plot(trange/1e-9, qt.expect(meas_basis2,states))
+      ax2.set_ylabel(r'$P _{|1-\rangle}$')
 
-      fig, ax = plt.subplots(figsize=(8,3))
-      ax.plot(trange/1e-9, qt.expect(meas_basis3,states))
-      ax.set_xlabel('Time (ns)')
-      ax.set_ylabel(r'$1-(P _{|1+\rangle}+P _{|1-\rangle})$')
+      ax3.plot(trange/1e-9, qt.expect(meas_basis3,states))
+      ax3.set_xlabel('Time (ns)')
+      ax3.set_ylabel(r'$1-(P _{|1+\rangle}+P _{|1-\rangle})$')
+
+            
+      for ax in fig.get_axes():
+          ax.label_outer()
 
     if( plot3D == True):
 
@@ -260,10 +259,15 @@ def double_qubit_evolution(larmor_frequencies, signal_array, trange, initial_sta
       colors = cm.cool(nrm(trange))
       
       # Plot the measurement basis results
-      b = qt.Bloch()
+      
+      fig = plt.figure(figsize=(10, 10));
+      ax_L = fig.add_subplot(121, projection='3d');
+      ax_R = fig.add_subplot(122, projection='3d');
+
+      b = qt.Bloch(axes=ax_L);
       b.add_points([qt.expect(meas_basis1,states), qt.expect(meas_basis2,states), qt.expect(meas_basis3,states)], "m")
       b.point_color = list(colors)
-      b.size=[2,2]
+      b.size=[3,3]
       b.show()
 
       # Create Measurement basis
@@ -272,10 +276,10 @@ def double_qubit_evolution(larmor_frequencies, signal_array, trange, initial_sta
       meas_basis3 = qt.Qobj(np.kron(qt.identity(2),qt.sigmaz()))
 
       # Plot the measurement basis results
-      b = qt.Bloch()
+      b = qt.Bloch(axes=ax_R);
       b.add_points([qt.expect(meas_basis1,states), qt.expect(meas_basis2,states), qt.expect(meas_basis3,states)], "m")
       b.point_color = list(colors)
-      b.size=[2,2]
+      b.size=[3,3]
       b.show()
 
   return (fidelity)
