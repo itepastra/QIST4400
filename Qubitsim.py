@@ -204,14 +204,14 @@ def double_qubit_evolution(larmor_frequencies, signal_array, trange, initial_sta
   # qt.propagator returns list of U for each time step
   U = qt.propagator(Hamiltonian,trange);
   U_rwa = qt.propagator(H_rwa,trange);
-
+  
   # For CPHASE gate some calibration is needed
   # This can be done by applying two Z gates on the qubits
   # Z gate can be achieved by changing the rotating frame reference therefore no signal needs to be sent
   dEz = np.abs(larmor_frequencies[1] - larmor_frequencies[0])
   dt = trange[1]-trange[0]
   theha_cali = np.sum( dEz - np.sqrt(signal_array**2 + dEz**2) )*dt/0.5/2
-  U_calibration = qt.Qobj(np.array([[1, 0, 0, 0],[0, np.exp(1j*np.pi*theha_cali), 0, 0],[0, 0, np.exp(-1j*np.pi*theha_cali), 0],[0, 0, 0, 1]]))
+  U_calibration = qt.Qobj(np.array([[1, 0, 0, 0],[0, np.exp(-1j*np.pi*theha_cali), 0, 0],[0, 0, np.exp(1j*np.pi*theha_cali), 0],[0, 0, 0, 1]]))
 
   # Fidelity calculation
   fidelity = calculate_fidelity( U_calibration*U_rwa[-1]*U[-1], target_operator );
@@ -243,7 +243,7 @@ def double_qubit_evolution(larmor_frequencies, signal_array, trange, initial_sta
       ax3.plot(trange/1e-9, qt.expect(meas_basis3,states))
       ax3.set_xlabel('Time (ns)')
       ax3.set_ylabel(r'$1-(P _{|1+\rangle}+P _{|1-\rangle})$')
-
+      plt.show()
             
       for ax in fig.get_axes():
           ax.label_outer()
@@ -269,6 +269,7 @@ def double_qubit_evolution(larmor_frequencies, signal_array, trange, initial_sta
       b.point_color = list(colors)
       b.size=[3,3]
       b.show()
+      
 
       # Create Measurement basis
       meas_basis1 = qt.Qobj(np.kron(qt.identity(2),qt.sigmax()))
@@ -277,9 +278,10 @@ def double_qubit_evolution(larmor_frequencies, signal_array, trange, initial_sta
 
       # Plot the measurement basis results
       b = qt.Bloch(axes=ax_R);
-      b.add_points([qt.expect(meas_basis1,states), qt.expect(meas_basis2,states), qt.expect(meas_basis3,states)], "m")
+      b.add_points([qt.expect(meas_basis1,states), -qt.expect(meas_basis2,states), qt.expect(meas_basis3,states)], "m")
       b.point_color = list(colors)
       b.size=[3,3]
       b.show()
+      
 
   return (fidelity)
