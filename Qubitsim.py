@@ -278,7 +278,7 @@ def double_qubit_evolution(larmor_frequencies, signal_array, trange, initial_sta
 
       # Plot the measurement basis results
       b = qt.Bloch(axes=ax_R);
-      b.add_points([qt.expect(meas_basis1,states), -qt.expect(meas_basis2,states), qt.expect(meas_basis3,states)], "m")
+      b.add_points([qt.expect(meas_basis1,states), qt.expect(meas_basis2,states), qt.expect(meas_basis3,states)], "m")
       b.point_color = list(colors)
       b.size=[3,3]
       b.show()
