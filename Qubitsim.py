@@ -428,3 +428,25 @@ def double_qubit_evolution_noisy(larmor_frequencies, signal_array, trange, initi
       b.size=[3,3]
       b.show()
   return (U_final)
+    
+def noise_psd(N, psd = lambda f: 1):
+        X_white = np.fft.rfft(np.random.randn(N));
+        S = psd(np.fft.rfftfreq(N))
+        # Normalize S
+        S = S / np.sqrt(np.mean(S**2))
+        X_shaped = X_white * S;
+        return np.fft.irfft(X_shaped);
+
+def PSDGenerator(f):
+    return lambda N: noise_psd(N, f)
+
+@PSDGenerator
+def white_noise(f):
+    return 1;
+
+@PSDGenerator
+def pink_noise(f):
+    return 1/np.where(f == 0, float('inf'), np.sqrt(f))
+
+def dagger(mat: np.ndarray):
+    return mat.conj().T
