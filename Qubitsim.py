@@ -108,7 +108,7 @@ def plot_signal(signal, sampling_rate=None, xlim = None):
       plt.xlim(xlim)
     fig.show()
 
-def plot_fft(signal, sampling_rate=None, xlim = None):
+def plot_fft(signal, sampling_rate=None, xlim = None, x_log=False):
   """
   Calculates and plots the FFT of a signal.
 
@@ -140,9 +140,13 @@ def plot_fft(signal, sampling_rate=None, xlim = None):
 
   # Plot
   plt.figure()
-  plt.plot(freqs, mag)
+  if x_log == True : 
+    plt.semilogx(freqs, mag)
+  else:
+    plt.plot(freqs, mag)
   if xlim is not None:
     plt.xlim(xlim)
+  plt.ylim((0,np.max(mag)))
   plt.xlabel("Frequency" if sampling_rate is not None else "Normalized Frequency")
   plt.ylabel("Signal Power (dB)")
   plt.title("Signal FFT")
@@ -430,12 +434,15 @@ def double_qubit_evolution_noisy(larmor_frequencies, signal_array, trange, initi
   return (U_final)
     
 def noise_psd(N, psd = lambda f: 1):
+        N = N + 1;
         X_white = np.fft.rfft(np.random.randn(N));
         S = psd(np.fft.rfftfreq(N))
         # Normalize S
         S = S / np.sqrt(np.mean(S**2))
         X_shaped = X_white * S;
-        return np.fft.irfft(X_shaped);
+        N = N - 1;
+        x = np.fft.irfft(X_shaped)[0:N]
+        return x;
 
 def PSDGenerator(f):
     return lambda N: noise_psd(N, f)
