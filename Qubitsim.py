@@ -186,7 +186,6 @@ def single_qubit_evolution(
     # qt.propagator returns list of U for each time step
     U = np.array(qt.propagator(Hamiltonian, trange, tlist=trange))
     U_w_rwa = np.array(qt.propagator(Hamoltonian_rwa, trange, tlist=trange)) * U
-    print(U)
     # Fidelity can be calculated with
     fidelity = calculate_fidelity(U_w_rwa[-1], target_operator)
     if plot2D | plot3D:
