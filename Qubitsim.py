@@ -184,19 +184,20 @@ def single_qubit_evolution(
     Hamoltonian_rwa = rwa_hamiltonian(larmor_frequency)
     # Calculate the operator with and w/o rotating frame approx.
     # qt.propagator returns list of U for each time step
-    U = qt.propagator(Hamiltonian, trange)
-    U_w_rwa = qt.propagator(Hamoltonian_rwa, trange) * U
+    U = np.array(qt.propagator(Hamiltonian, trange, tlist=trange))
+    U_w_rwa = np.array(qt.propagator(Hamoltonian_rwa, trange, tlist=trange)) * U
+    print(U)
     # Fidelity can be calculated with
     fidelity = calculate_fidelity(U_w_rwa[-1], target_operator)
-    if plot2D | plot3D == True:
+    if plot2D | plot3D:
         if RWA:
-            states = U_w_rwa * initial_state
+            states = [uw * initial_state for uw in U_w_rwa]
         else:
-            states = U * initial_state
+            states = [u * initial_state for u in U]
 
         meas_basis = [qt.sigmax(), qt.sigmay(), qt.sigmaz()]
 
-        if plot2D == True:
+        if plot2D:
             fig, ax = plt.subplots(figsize=(8, 3))
             ax.plot(
                 trange / 1e-9,
@@ -212,7 +213,7 @@ def single_qubit_evolution(
             ax.legend()
             ax.set_xlabel("Time")
             ax.set_ylabel("Qubit " + str(index + 1))
-        if plot3D == True:
+        if plot3D:
             b = qt.Bloch()
             b.add_points(
                 [
